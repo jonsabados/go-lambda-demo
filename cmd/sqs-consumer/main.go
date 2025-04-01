@@ -16,6 +16,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rs/zerolog"
 
+	"github.com/jonsabados/go-lambda-demo/correlation"
 	"github.com/jonsabados/go-lambda-demo/example"
 )
 
@@ -90,6 +91,15 @@ func NewHandler(logger zerolog.Logger, eventStore EventStore) func(ctx context.C
 		ret := events.SQSEventResponse{}
 		// SQS sends messages to lambdas in batches, so lets process each one (note, this is configurable, and you may set a batch size of 1 but the request still comes in as an array)
 		for _, ev := range request.Records {
+			// get the correlation id going on logs for the message
+			ctx := ctx
+			if correlationIDAttr, ok := ev.MessageAttributes[example.CorrelationIDAttribute]; ok {
+				if correlationIDAttr.StringValue != nil {
+					ctx = correlation.WithContext(ctx, *correlationIDAttr.StringValue)
+				}
+			}
+			// excessive, but for demoing log correlation over SQS
+			zerolog.Ctx(ctx).Info().Msg("processing event")
 			// process the event in its own sub-trace - we are throwing the error on the floor because it is not needed after it has been returned to the xray.Capture call.
 			// However, we could also kick back an error from the handler function to fail the entire batch (opposed to adding failed entries to our response)
 			_ = xray.Capture(ctx, "processEvent", func(ctx context.Context) error {

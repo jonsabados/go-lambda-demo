@@ -1,14 +1,23 @@
 # go-lambda-demo
 
 ## What is this
-This is an example serverless application deployed to AWS via terraform.
+This is an example serverless application deployed to AWS via terraform. It consists of a rest based application stuffed into a Lambda behind an ALB with a single `/event` endpoint that takes a json payload with a message and a source attribute. These events are placed on a SQS queue, which is consumed by the [SQS Consumer Lambda](#sqs-consumer) which stores the event in [DynamoDB](https://aws.amazon.com/dynamodb/).
 
 ### Components
 
+#### Stand Alone Version of the Rest API
+One of the challenges of serverless development is it being generally difficult to do things like running the stack locally. However, since we are using a technique in which we stuff a traditional application inside a lambda for our HTTP ingress it means that we can also have a standalone version without too much effort. The [standalone version](cmd/standalone-api/main.go) provides this. In order to run it does need to know about the target SQS queue - there is a make target, `make run-rest-api`, which will source this value via terraform outputs & then start the application listening on port 8080.
+
 #### SQS Consumer
-There is an example [SQS consumer lambda](cmd/sqs-consumer) which takes messages off of a queue and persists them in DynamoDB. The terraform defining the dynamo table, queue, dead letter queue, and lambda can be found [here](terraform/event-store.tf)
+There is an example [SQS consumer lambda](cmd/sqs-consumer/main.go) which takes messages off of a queue and persists them in DynamoDB. The terraform defining the dynamo table, queue, dead letter queue, and lambda can be found [here](terraform/event-store.tf)
 
 ## Prerequisites
+### Go
+You will need go installed. This has been tested with `go1.24.1`, however any relatively recent version of go should suffice.
+
+### make
+A Makefile is used to build the project, as such you will need make installed on your machine. GN Make 3.81 is known to work.
+
 ### AWS account
 You will need an AWS account, and should have your environment [configured](https://docs.aws.amazon.com/cli/latest/reference/configure/) so that the aws cli has access to this account. You may test this by executing a command like `aws s3 list`.
 
