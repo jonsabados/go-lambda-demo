@@ -6,7 +6,10 @@ dist/:
 dist/sqsConsumerLambda.zip: dist/ $(shell find . -iname "*.go")
 	./scripts/build-lambda.sh github.com/jonsabados/go-lambda-demo/cmd/sqs-consumer dist/sqsConsumerLambda.zip
 
-build: dist/sqsConsumerLambda.zip
+dist/apiLambda.zip: dist/ $(shell find . -iname "*.go")
+	./scripts/build-lambda.sh github.com/jonsabados/go-lambda-demo/cmd/lambda-based-api dist/apiLambda.zip
+
+build: dist/sqsConsumerLambda.zip dist/apiLambda.zip
 
 .PHONY: run-rest-api
 run-rest-api:

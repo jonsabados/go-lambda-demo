@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"time"
 
+	"github.com/aws/aws-xray-sdk-go/v2/xray"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog"
@@ -22,8 +24,10 @@ func NewRestAPI(logger zerolog.Logger, correlationIDGenerator correlation.IDGene
 	r.Use(correlation.Middleware(correlationIDGenerator))
 	r.Use(RequestLoggingMiddleware())
 	// now for our example endpoint
-	r.Post("/event", eventEndpoint.ServeHTTP)
-	return r
+	r.Post("/event", WrapWithSegment("postEvent", eventEndpoint).ServeHTTP)
+
+	// and let's get some x-ray goodness going on
+	return xray.Handler(xray.NewFixedSegmentNamer("processHttpRequest"), r)
 }
 
 // ZerologLogAttachMiddleware attaches the provided logger to all request contexts
@@ -55,4 +59,13 @@ func RequestLoggingMiddleware() func(next http.Handler) http.Handler {
 			next.ServeHTTP(ww, request)
 		})
 	}
+}
+
+func WrapWithSegment(segmentName string, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		_ = xray.Capture(request.Context(), segmentName, func(ctx context.Context) error {
+			handler.ServeHTTP(writer, request.WithContext(ctx))
+			return nil
+		})
+	})
 }

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -33,7 +34,7 @@ func NewEventReceiverEndpoint(er EventReceiver) http.Handler {
 		err = json.Unmarshal(body, &payload)
 		if err != nil {
 			zerolog.Ctx(ctx).Warn().Err(err).Msg("error unmarshalling request")
-			DoBadRequestResponse(ctx, []string{}, make([]FieldError, 0), writer)
+			DoBadRequestResponse(ctx, []string{fmt.Sprintf("Unable to process request body: %s", err)}, make([]FieldError, 0), writer)
 			return
 		}
 
