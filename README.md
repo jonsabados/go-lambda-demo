@@ -3,6 +3,9 @@
 ## What is this
 This is an example serverless application deployed to AWS via terraform. It consists of a rest based application stuffed into a Lambda behind API Gateway with a single `/event` endpoint that takes a json payload with a message and a source attribute. These events are placed on a SQS queue, which is consumed by the [SQS Consumer Lambda](#sqs-consumer) which stores the event in [DynamoDB](https://aws.amazon.com/dynamodb/).
 
+### A note about unit tests
+Currently, there are no unit tests present in this project. This would be entirely unacceptable in a production code base. However, it was put together with limited time & all the individual pieces of code are very simple, with any complexity being around the wiring of the different components together. Assuming I find the time, and motivation, the code is structured in ways to make it testable & a fast follow item would be to introduce mockery for mock generation and then putting example unit tests in place.
+
 ### Components
 
 #### Stand Alone Version of the Rest API
